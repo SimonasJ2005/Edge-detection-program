@@ -30,3 +30,9 @@ void savePGM(const Image& image, const std::string& path);
 // Sugeneruoja testinį vaizdą su ryškiais kraštais (kvadratai, apskritimas, gradientas),
 // kad nereikėtų atsisiųsti duomenų ir būtų galima pasirinkti bet kokį dydį.
 Image generateTestImage(int width, int height);
+
+// Nuskaito PGM, JPEG ar PNG ir paverčia į pilkumo atspalvius.
+Image loadImage(const std::string& path);
+
+// Išsaugo vaizdą; formatą parenka pagal plėtinį (.pgm, .png, .jpg/.jpeg)
+void saveImage(const Image& img, const std::string& path);
