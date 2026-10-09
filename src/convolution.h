@@ -8,3 +8,6 @@ void sobelRows(const Image& in, Image& out, int rowBegin, int rowEnd);
 
 // Nuosekli versija
 Image sobelSequential(const Image& in);
+
+// Lygiagreti versija su std::thread
+Image sobelParallel(const Image& in, int threads);
