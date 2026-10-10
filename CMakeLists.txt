@@ -7,16 +7,16 @@ endif()
 
 find_package(Threads REQUIRED)
 
-add_executable(edge
-    src/main.cpp
-    src/image.cpp
-    src/convolution.cpp
-    src/convolution_parallel.cpp)
+set(COMMON_SOURCES src/image.cpp src/convolution.cpp src/convolution_parallel.cpp)
 
-target_compile_features(edge PRIVATE cxx_std_17)
-target_link_libraries(edge PRIVATE Threads::Threads)
+add_executable(edge src/main.cpp ${COMMON_SOURCES})
+add_executable(benchmark src/benchmark.cpp ${COMMON_SOURCES})
 
-if(MSVC)
-    target_compile_options(edge PRIVATE /utf-8)
-    target_compile_definitions(edge PRIVATE _CRT_SECURE_NO_WARNINGS)
-endif()
+foreach(target edge benchmark)
+    target_compile_features(${target} PRIVATE cxx_std_17)
+    target_link_libraries(${target} PRIVATE Threads::Threads)
+    if(MSVC)
+        target_compile_options(${target} PRIVATE /utf-8)
+        target_compile_definitions(${target} PRIVATE _CRT_SECURE_NO_WARNINGS)
+    endif()
+endforeach()
