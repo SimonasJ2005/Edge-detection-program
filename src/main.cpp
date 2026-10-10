@@ -26,7 +26,7 @@ static Options parseArgs(int argc, char** argv) {
         std::string arg = argv[i];
         if(i + 1 >= argc) throw std::runtime_error("Trūksta reikšmės parametrui " + arg);
 
-        std::string value = argv[i++];
+        std::string value = argv[++i];
         if(arg == "--size") opt.size = std::stoi(value);
         else if(arg == "--threads") opt.threads = std::stoi(value);
         else if(arg == "--input") opt.input = value;
@@ -61,10 +61,11 @@ int main(int argc, char** argv) {
                   << "Rezultatai " << (same ? "SUTAMPA" : "NESUTAMPA") << "\n";
 
         std::filesystem::create_directories("img");
-        savePGM(input, "img/input.pgm");
-        savePGM(par, "img/edges.pgm");
-        saveImage(input, "img/input.png");
-        saveImage(par, "img/edges.png");
+        std::string baseName = opt.input.empty()
+        ? "test_" + std::to_string(opt.size)
+        : std::filesystem::path(opt.input).stem().string();
+        saveImage(par, "img/" + baseName + "_edges.png");
+
         return same ? 0 : 1;
     } catch(const std::exception& e) {
         std::cerr << "Klaida: " << e.what() << "\n";
