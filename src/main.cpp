@@ -34,6 +34,7 @@ static Options parseArgs(int argc, char** argv) {
     }
     if(opt.size < 3) throw std::runtime_error("--size turi būti bent 3");
     if(opt.threads < 1) throw std::runtime_error("--threads turi būti bent 1");
+    if(opt.threads > static_cast<int>(std::thread::hardware_concurrency())) opt.threads = std::thread::hardware_concurrency();
     return opt;
 }
 
@@ -64,6 +65,8 @@ int main(int argc, char** argv) {
         std::string baseName = opt.input.empty()
         ? "test_" + std::to_string(opt.size)
         : std::filesystem::path(opt.input).stem().string();
+        // Sugeneruotas testinis vaizdas išsaugomas, kad būtų galima palyginti su rezultatu
+        if(opt.input.empty()) saveImage(input, "img/" + baseName + ".png");
         saveImage(par, "img/" + baseName + "_edges.png");
 
         return same ? 0 : 1;
