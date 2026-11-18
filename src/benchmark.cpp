@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <locale>
 #include <stdexcept>
 #include <vector>
 #include <thread>
@@ -14,6 +15,11 @@
 
 using Clock = std::chrono::steady_clock;
 constexpr int REPEATS = 5;
+
+// Skaičiai rašomi su dešimtainiu kableliu, be tūkstančių skyriklių
+struct DecimalComma : std::numpunct<char> {
+    char do_decimal_point() const override { return ','; }
+};
 
 // Apskaičiuoja funkcijos vykdymo laiką milisekundėmis
 template<typename F>
@@ -43,7 +49,8 @@ int main() {
         std::filesystem::create_directories("results");
         std::ofstream csv("results/benchmark.csv");
         if(!csv) throw std::runtime_error("Nepavyko sukurti results/benchmark.csv");
-        csv << "size,threads,seq_ms,par_ms,speedup,efficiency\n";
+        csv.imbue(std::locale(csv.getloc(), new DecimalComma));
+        csv << "size;threads;seq_ms;par_ms;speedup;efficiency\n";
 
         std::cout << std::fixed << std::setprecision(3);
         for(int size : sizes) {
@@ -75,8 +82,8 @@ int main() {
                 std::cout << size << "x" << size << "  p=" << std::setw(2) << p
                           << "  seq=" << seqMs << " ms  par=" << parMs << " ms  S=" << speedup
                           << "  E=" << efficiency << "\n";
-                csv << size << "," << p << "," << seqMs << "," << parMs << ","
-                    << speedup << "," << efficiency << "\n";
+                csv << size << ";" << p << ";" << seqMs << ";" << parMs << ";"
+                    << speedup << ";" << efficiency << "\n";
             }
         }
         std::cout << "Rezultatai išsaugoti results/benchmark.csv faile\n";

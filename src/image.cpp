@@ -89,8 +89,8 @@ void saveImage(const Image& img, const std::string& path) {
     int ok = 0;
     if(extension == "png")
         ok = stbi_write_png(path.c_str(), img.width, img.height, 1, img.data.data(), img.width);
-    else if (extension == "png" || extension == "jpeg")
-        ok = stbi_write_png(path.c_str(), img.width, img.height, 1, img.data.data(), 95);
+    else if (extension == "jpg" || extension == "jpeg")
+        ok = stbi_write_jpg(path.c_str(), img.width, img.height, 1, img.data.data(), 95);
     else if (extension == "pgm") {
         savePGM(img, path);
         return;

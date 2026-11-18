@@ -23,7 +23,7 @@ void sobelRows(const Image& in, Image& out, int rowBegin, int rowEnd) {
                 for(int kx = -1; kx <= 1; kx++) {
                     int p = in.at(kx + x, ky + y);
                     gx += GX[ky+1][kx+1] * p;
-                    gx += GY[ky+1][kx+1] * p;
+                    gy += GY[ky+1][kx+1] * p;
                 }
             }
 

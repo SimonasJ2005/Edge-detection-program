@@ -105,6 +105,8 @@ Programa parametrų nepriima. Ji:
 4. patikrina, ar lygiagretus rezultatas sutampa su nuosekliu;
 5. rezultatus išveda į ekraną ir įrašo į `results/benchmark.csv`.
 
+CSV faile stulpelių skyriklis yra `;`, o dešimtainis ženklas – kablelis (pvz. `1,1782`), todėl failą galima tiesiogiai atidaryti Excel su lietuviškais nustatymais.
+
 CSV failo stulpeliai:
 
 | Stulpelis    | Aprašymas |
