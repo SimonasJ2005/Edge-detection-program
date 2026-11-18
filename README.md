@@ -1,11 +1,20 @@
 # Edge-detection-program
 
-Kraštų aptikimo programa, naudojanti **Sobel** operatorių. Projekte realizuotos dvi versijos:
+Kraštų aptikimo programa, naudojanti **Sobel** operatorių (3×3 konvoliucija). Projekte realizuotos dvi versijos:
 
 - **nuosekli** (`sobelSequential`) – visas vaizdas apdorojamas vienoje gijoje;
-- **lygiagreti** (`sobelParallel`) – vaizdo eilutės padalijamos į intervalus ir kiekvieną intervalą apdoroja atskira `std::thread` gija.
+- **lygiagreti** (`sobelParallel`) – vaizdas padalijamas į juostas ir kiekvieną juostą apdoroja atskira `std::thread` gija.
 
-Abi versijos naudoja tą pačią funkciją `sobelRows`, todėl jų rezultatai turi būti identiški – programa tai patikrina automatiškai.
+Abi versijos lyginamos keičiant vaizdo dydį, gijų skaičių ir **atminties prieigos tvarką**:
+
+| Tvarka | Ciklai | Lygiagrečioje versijoje gijos gauna | Prieiga prie atminties |
+|--------|--------|-------------------------------------|------------------------|
+| `row`  | išorinis per eilutes (`y`), vidinis per stulpelius (`x`) | eilučių juostas    | iš eilės – kešas išnaudojamas gerai |
+| `col`  | išorinis per stulpelius (`x`), vidinis per eilutes (`y`) | stulpelių juostas  | kas `width` baitų – kešas išnaudojamas prastai |
+
+Vaizdas dalijamas pagal išorinio ciklo dimensiją, todėl kiekviena gija savo juostoje eina per atmintį lygiai taip pat, kaip nuosekli versija – pagreitėjimas atspindi lygiagretumą, o ne pasikeitusį lokalumą.
+
+Abi versijos naudoja tą pačią funkciją `sobelRegion`, todėl jų rezultatai turi būti identiški (nepriklausomai nuo tvarkos) – programa tai patikrina automatiškai.
 
 ## Reikalavimai
 
@@ -38,14 +47,15 @@ Vykdomieji failai atsiranda `build/` kataloge (naudojant Visual Studio generator
 ### `edge` – kraštų aptikimas
 
 ```bash
-edge [--input <failas>] [--size <N>] [--threads <P>]
+edge [--input <failas>] [--size <N>] [--threads <P>] [--order row|col]
 ```
 
 | Parametras  | Numatytoji reikšmė            | Aprašymas |
 |-------------|-------------------------------|-----------|
 | `--input`   | *(nėra)*                      | Įvesties vaizdas (PNG, JPEG, PGM ir kiti `stb_image` palaikomi formatai). Spalvotas vaizdas automatiškai paverčiamas pilkumo atspalviais. Jei nenurodyta – sugeneruojamas testinis vaizdas. |
 | `--size`    | `1024`                        | Generuojamo testinio vaizdo dydis (`N × N`). Naudojamas tik tada, kai nenurodytas `--input`. Turi būti bent 3. |
-| `--threads` | procesoriaus gijų skaičius    | Lygiagrečios versijos gijų skaičius. Turi būti bent 1. |
+| `--threads` | procesoriaus gijų skaičius    | Lygiagrečios versijos gijų skaičius. Turi būti bent 1. Jei nurodyta daugiau nei procesorius turi loginių branduolių, sumažinama iki jų skaičiaus. |
+| `--order`   | `row`                         | Atminties prieigos tvarka: `row` (eilutėmis) arba `col` (stulpeliais). Taikoma abiem versijoms. |
 
 Visi parametrai neprivalomi ir gali būti nurodyti bet kokia tvarka.
 
@@ -60,6 +70,9 @@ Visi parametrai neprivalomi ir gali būti nurodyti bet kokia tvarka.
 
 # Apdoroti savo nuotrauką su 4 gijomis
 ./build/edge --input nuotraukos/katinas.jpg --threads 4
+
+# Tas pats 4096x4096 vaizdas, bet einant stulpeliais
+./build/edge --size 4096 --order col
 ```
 
 Windows (Visual Studio generatorius):
@@ -68,13 +81,13 @@ Windows (Visual Studio generatorius):
 .\build\Release\edge.exe --input nuotraukos\katinas.jpg --threads 4
 ```
 
-**Išvesties pavyzdys** (laikai priklauso nuo kompiuterio):
+**Išvesties pavyzdys** – `edge --size 4096` su i7-1355U (12 loginių branduolių). Laikai priklauso nuo kompiuterio, o `edge` matuoja tik vieną paleidimą, todėl patikimesniems skaičiams naudokite `benchmark`:
 
 ```
-Vaizdas: 1024x1024, gijos = 8
-Nuosekli:    7.412 ms
-Lygiagreti:  1.538 ms
-Pagreitejimas: 4.819x
+Vaizdas: 4096x4096, gijos = 12, tvarka = row
+Nuosekli:    171.538 ms
+Lygiagreti:  50.3738 ms
+Pagreitejimas: 3.40531x
 Rezultatai SUTAMPA
 ```
 
@@ -100,9 +113,9 @@ Rezultatai SUTAMPA
 Programa parametrų nepriima. Ji:
 
 1. sugeneruoja testinius vaizdus, kurių dydžiai **512, 1024, 2048 ir 4096** pikselių;
-2. kiekvienam dydžiui išmatuoja nuoseklią versiją ir lygiagrečią versiją su **1, 2, 4, 6, 8, 10, 12, 16** gijų (bei procesoriaus gijų skaičiumi, jei jo sąraše nėra);
+2. kiekvienam dydžiui ir abiem prieigos tvarkoms (**`row`, `col`**) išmatuoja nuoseklią versiją ir lygiagrečią versiją su **1, 2, 4, 6, 8, 10, 12, 16** gijų (bei procesoriaus gijų skaičiumi, jei jo sąraše nėra);
 3. kiekvienam matavimui atlieka 1 apšilimo paleidimą ir 5 matavimus, naudojama jų **mediana**;
-4. patikrina, ar lygiagretus rezultatas sutampa su nuosekliu;
+4. patikrina, ar visi rezultatai sutampa su nuosekliu `row` rezultatu;
 5. rezultatus išveda į ekraną ir įrašo į `results/benchmark.csv`.
 
 CSV faile stulpelių skyriklis yra `;`, o dešimtainis ženklas – kablelis (pvz. `1,1782`), todėl failą galima tiesiogiai atidaryti Excel su lietuviškais nustatymais.
@@ -112,8 +125,9 @@ CSV failo stulpeliai:
 | Stulpelis    | Aprašymas |
 |--------------|-----------|
 | `size`       | Vaizdo kraštinės ilgis pikseliais |
+| `order`      | Atminties prieigos tvarka (`row` arba `col`) |
 | `threads`    | Gijų skaičius `p` |
-| `seq_ms`     | Nuoseklios versijos laikas (ms) |
+| `seq_ms`     | Nuoseklios versijos laikas (ms), ta pačia tvarka |
 | `par_ms`     | Lygiagrečios versijos laikas (ms) |
 | `speedup`    | Pagreitėjimas `S = seq_ms / par_ms` |
 | `efficiency` | Efektyvumas `E = S / p` |
@@ -122,11 +136,19 @@ CSV failo stulpeliai:
 
 ## Rezultatai
 
-Išmatuoti rezultatai pateikti `results/benchmark.csv`, o grafikai – `results/plots/`:
+Išmatuoti rezultatai (i7-1355U: 2 P + 8 E branduoliai, 12 loginių) pateikti `results/benchmark.csv`, o grafikai – `results/plots/`. Grafikai generuojami iš CSV (reikia Python su `matplotlib`):
 
-| Pagreitėjimas | Efektyvumas | Pagreitėjimas pagal dydį |
-|---------------|-------------|--------------------------|
-| ![Pagreitėjimas](results/plots/1_speedup.png) | ![Efektyvumas](results/plots/2_efficiency.png) | ![Pagreitėjimas pagal dydį](results/plots/3_speedup_size.png) |
+```bash
+python scripts/plot.py
+```
+
+![Pagreitėjimas](results/plots/1_speedup.png)
+
+![Efektyvumas](results/plots/2_efficiency.png)
+
+![Pagreitėjimas pagal dydį](results/plots/3_speedup_size.png)
+
+![Prieigos tvarkos įtaka](results/plots/4_order.png)
 
 ## Projekto struktūra
 
@@ -135,10 +157,12 @@ Išmatuoti rezultatai pateikti `results/benchmark.csv`, o grafikai – `results/
 ├── src/
 │   ├── main.cpp                  # programa „edge“
 │   ├── benchmark.cpp             # programa „benchmark“
-│   ├── convolution.h/.cpp        # Sobel operatorius ir nuosekli versija
+│   ├── convolution.h/.cpp        # Sobel operatorius, prieigos tvarka ir nuosekli versija
 │   ├── convolution_parallel.cpp  # lygiagreti versija (std::thread)
 │   ├── image.h/.cpp              # vaizdo struktūra, skaitymas, rašymas, testinio vaizdo generavimas
 │   └── stb_image*.h              # vaizdų skaitymo/rašymo bibliotekos
+├── scripts/
+│   └── plot.py                   # grafikai iš results/benchmark.csv
 ├── results/                      # benchmark rezultatai ir grafikai
 └── img/                          # programos „edge“ rezultatai (kuriamas automatiškai, neįtraukiamas į git)
 ```

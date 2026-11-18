@@ -16,6 +16,7 @@ struct Options {
     int size = 1024;
     int threads = std::max(1, static_cast<int>(std::thread::hardware_concurrency()));
     std::string input; // Jei tuščias - generuojamas size*size failas
+    Order order = Order::Row;
 };
 
 // Skaito poras --argumentoVardas argumentoReikšmė, neprivaloma įvesti visus argumentus
@@ -30,6 +31,7 @@ static Options parseArgs(int argc, char** argv) {
         if(arg == "--size") opt.size = std::stoi(value);
         else if(arg == "--threads") opt.threads = std::stoi(value);
         else if(arg == "--input") opt.input = value;
+        else if(arg == "--order") opt.order = parseOrder(value);
         else throw std::runtime_error("Nežinomas parametras " + arg);
     }
     if(opt.size < 3) throw std::runtime_error("--size turi būti bent 3");
@@ -44,12 +46,13 @@ int main(int argc, char** argv) {
 
         Image input = opt.input.empty() ? generateTestImage(opt.size, opt.size)
                                         : loadImage(opt.input);
-        std::cout << "Vaizdas: " << input.width << "x" << input.height << ", gijos = " << opt.threads << "\n";
-        
+        std::cout << "Vaizdas: " << input.width << "x" << input.height << ", gijos = " << opt.threads
+                  << ", tvarka = " << orderName(opt.order) << "\n";
+
         auto t0 = Clock::now();
-        Image seq = sobelSequential(input);
+        Image seq = sobelSequential(input, opt.order);
         auto t1 = Clock::now();
-        Image par = sobelParallel(input, opt.threads);
+        Image par = sobelParallel(input, opt.threads, opt.order);
         auto t2 = Clock::now();
 
         double seqMs = std::chrono::duration<double, std::milli>(t1 - t0).count();
