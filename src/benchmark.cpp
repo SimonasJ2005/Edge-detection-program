@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <chrono>
-#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -8,44 +7,38 @@
 #include <locale>
 #include <stdexcept>
 #include <vector>
-#include <thread>
 
 #include "image.h"
 #include "convolution.h"
 
-using Clock = std::chrono::steady_clock;
 constexpr int REPEATS = 5;
+static_assert(REPEATS % 2 == 1, "mediana - vidurinis elementas, todėl REPEATS turi būti nelyginis");
 
-// Skaičiai rašomi su dešimtainiu kableliu, be tūkstančių skyriklių
+// Skaičiai rašomi su dešimtainiu kableliu
 struct DecimalComma : std::numpunct<char> {
     char do_decimal_point() const override { return ','; }
 };
 
-// Apskaičiuoja funkcijos vykdymo laiką milisekundėmis
+// Paleidžia f vieną kartą apšilimui, tada REPEATS kartų; grąžina laikų medianą milisekundėmis
 template<typename F>
-static double timeMs(F&& f) {
-    auto t0 = Clock::now();
-    f();
-    auto t1 = Clock::now();
-
-    return std::chrono::duration<double, std::milli>(t1 - t0).count();
-}
-
-static double median(std::vector<double> v) {
-    std::sort(v.begin(), v.end());
-    std::size_t n = v.size();
-    return (n % 2 == 0) ? (v[n / 2 - 1] + v[n / 2]) / 2.0 : v[n / 2];
+static double medianMs(F f) {
+    f(); // apšilimas
+    std::vector<double> times;
+    for(int r = 0; r < REPEATS; r++) {
+        auto t0 = std::chrono::steady_clock::now();
+        f();
+        auto t1 = std::chrono::steady_clock::now();
+        times.push_back(std::chrono::duration<double, std::milli>(t1 - t0).count());
+    }
+    std::sort(times.begin(), times.end());
+    return times[REPEATS / 2];
 }
 
 int main() {
     try {
         const std::vector<int> sizes = {512, 1024, 2048, 4096};
         const std::vector<Order> orders = {Order::Row, Order::Column};
-        std::vector<int> threadCounts = {1, 2, 4, 6, 8, 10, 12, 16};
-        int hw = static_cast<int>(std::thread::hardware_concurrency());
-        if(hw > 0 && std::find(threadCounts.begin(), threadCounts.end(), hw) == threadCounts.end())
-            threadCounts.push_back(hw);
-        std::sort(threadCounts.begin(), threadCounts.end());
+        const std::vector<int> threadCounts = {1, 2, 4, 6, 8, 10, 12, 16};
 
         std::filesystem::create_directories("results");
         std::ofstream csv("results/benchmark.csv");
@@ -60,28 +53,16 @@ int main() {
             const Image reference = sobelSequential(input, Order::Row);
 
             for(Order order : orders) {
-                // 1 apšilimo bėgimas, tada REPEATS matavimų
-                Image seqOut;
-                timeMs([&] { seqOut = sobelSequential(input, order); });
-                std::vector<double> seqTimes;
-                for(int r=0; r < REPEATS; r++) {
-                    seqTimes.push_back(timeMs([&] { seqOut = sobelSequential(input, order); }));
-                }
-                if(seqOut.data != reference.data)
+                Image out;
+                double seqMs = medianMs([&] { out = sobelSequential(input, order); });
+                if(out.data != reference.data)
                     throw std::runtime_error("Nuoseklus rezultatas priklauso nuo prieigos tvarkos");
-                double seqMs = median(seqTimes);
 
                 for(int p : threadCounts) {
-                    Image parOut;
-                    timeMs([&] { parOut = sobelParallel(input, p, order); });  // apšilimas
-                    std::vector<double> parTimes;
-                    for (int r = 0; r < REPEATS; ++r)
-                        parTimes.push_back(timeMs([&] { parOut = sobelParallel(input, p, order); }));
-
-                    if(parOut.data != reference.data)
+                    double parMs = medianMs([&] { out = sobelParallel(input, p, order); });
+                    if(out.data != reference.data)
                         throw std::runtime_error("Lygiagretus rezultatas nesutampa su nuosekliu");
 
-                    double parMs = median(parTimes);
                     double speedup = seqMs / parMs;
                     double efficiency = speedup / p;
 

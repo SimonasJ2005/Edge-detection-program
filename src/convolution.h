@@ -8,7 +8,7 @@
 //  Row    - išorinis ciklas per eilutes (y), vidinis per stulpelius (x). Pikseliai
 //           skaitomi iš eilės, kaip jie išdėstyti atmintyje.
 //  Column - išorinis ciklas per stulpelius (x), vidinis per eilutes (y). Kiekvienas
-//           žingsnis peršoka per visą eilutę (width baitų), todėl kešas išnaudojamas prastai.
+//           žingsnis peršoka per visą eilutę (width baitų), todėl cache išnaudojamas prastai.
 enum class Order { Row, Column };
 
 // "row" -> Order::Row, "col" -> Order::Column. Kitu atveju meta std::runtime_error.

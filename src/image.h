@@ -21,18 +21,12 @@ struct Image {
     }
 };
 
-// Nuskaito PGM (P5) failą. Klaidos atveju meta std::runtime_error.
-Image loadPGM(const std::string& path);
-
-// Išsaugo vaizdą PGM (P5) formatu.
-void savePGM(const Image& image, const std::string& path);
-
 // Sugeneruoja testinį vaizdą su ryškiais kraštais (kvadratai, apskritimas, gradientas),
 // kad nereikėtų atsisiųsti duomenų ir būtų galima pasirinkti bet kokį dydį.
 Image generateTestImage(int width, int height);
 
-// Nuskaito PGM, JPEG ar PNG ir paverčia į pilkumo atspalvius.
+// Nuskaito vaizdą per stb_image (PNG, JPEG, PGM ir kt.) ir paverčia į pilkumo atspalvius.
 Image loadImage(const std::string& path);
 
-// Išsaugo vaizdą; formatą parenka pagal plėtinį (.pgm, .png, .jpg/.jpeg)
+// Išsaugo vaizdą per stb_image_write; formatą parenka pagal plėtinį (.png, .jpg/.jpeg)
 void saveImage(const Image& img, const std::string& path);

@@ -75,10 +75,16 @@ Visi parametrai neprivalomi ir gali būti nurodyti bet kokia tvarka.
 ./build/edge --size 4096 --order col
 ```
 
-Windows (Visual Studio generatorius):
+Windows (Visual Studio generatorius) – vykdomieji failai yra `build/Release/` kataloge:
 
 ```powershell
+# PowerShell
 .\build\Release\edge.exe --input nuotraukos\katinas.jpg --threads 4
+```
+
+```bash
+# Git Bash (PowerShell taip pat priima šią formą)
+./build/Release/edge.exe --input nuotraukos/katinas.jpg --threads 4
 ```
 
 **Išvesties pavyzdys** – `edge --size 4096` su i7-1355U (12 loginių branduolių). Laikai priklauso nuo kompiuterio, o `edge` matuoja tik vieną paleidimą, todėl patikimesniems skaičiams naudokite `benchmark`:
@@ -107,16 +113,18 @@ Rezultatai SUTAMPA
 ### `benchmark` – našumo matavimai
 
 ```bash
-./build/benchmark
+./build/benchmark                  # Visual Studio generatorius: ./build/Release/benchmark.exe
 ```
 
 Programa parametrų nepriima. Ji:
 
 1. sugeneruoja testinius vaizdus, kurių dydžiai **512, 1024, 2048 ir 4096** pikselių;
-2. kiekvienam dydžiui ir abiem prieigos tvarkoms (**`row`, `col`**) išmatuoja nuoseklią versiją ir lygiagrečią versiją su **1, 2, 4, 6, 8, 10, 12, 16** gijų (bei procesoriaus gijų skaičiumi, jei jo sąraše nėra);
+2. kiekvienam dydžiui ir abiem prieigos tvarkoms (**`row`, `col`**) išmatuoja nuoseklią versiją ir lygiagrečią versiją su **1, 2, 4, 6, 8, 10, 12, 16** gijų;
 3. kiekvienam matavimui atlieka 1 apšilimo paleidimą ir 5 matavimus, naudojama jų **mediana**;
 4. patikrina, ar visi rezultatai sutampa su nuosekliu `row` rezultatu;
 5. rezultatus išveda į ekraną ir įrašo į `results/benchmark.csv`.
+
+Skirtingai nei `edge`, `benchmark` gijų skaičiaus neriboja: 16 gijų matuojama net tada, kai procesorius turi mažiau loginių gijų (pvz., i7-1355U – 12). Taip matyti, kas nutinka, kai gijų daugiau nei procesorius gali vykdyti vienu metu.
 
 CSV faile stulpelių skyriklis yra `;`, o dešimtainis ženklas – kablelis (pvz. `1,1782`), todėl failą galima tiesiogiai atidaryti Excel su lietuviškais nustatymais.
 
@@ -136,19 +144,7 @@ CSV failo stulpeliai:
 
 ## Rezultatai
 
-Išmatuoti rezultatai (i7-1355U: 2 P + 8 E branduoliai, 12 loginių) pateikti `results/benchmark.csv`, o grafikai – `results/plots/`. Grafikai generuojami iš CSV (reikia Python su `matplotlib`):
-
-```bash
-python scripts/plot.py
-```
-
-![Pagreitėjimas](results/plots/1_speedup.png)
-
-![Efektyvumas](results/plots/2_efficiency.png)
-
-![Pagreitėjimas pagal dydį](results/plots/3_speedup_size.png)
-
-![Prieigos tvarkos įtaka](results/plots/4_order.png)
+Išmatuoti rezultatai (i7-1355U: 2 P + 8 E branduoliai, 12 loginių) pateikti `results/benchmark.csv`.
 
 ## Projekto struktūra
 
@@ -161,8 +157,6 @@ python scripts/plot.py
 │   ├── convolution_parallel.cpp  # lygiagreti versija (std::thread)
 │   ├── image.h/.cpp              # vaizdo struktūra, skaitymas, rašymas, testinio vaizdo generavimas
 │   └── stb_image*.h              # vaizdų skaitymo/rašymo bibliotekos
-├── scripts/
-│   └── plot.py                   # grafikai iš results/benchmark.csv
-├── results/                      # benchmark rezultatai ir grafikai
+├── results/                      # benchmark rezultatai
 └── img/                          # programos „edge“ rezultatai (kuriamas automatiškai, neįtraukiamas į git)
 ```

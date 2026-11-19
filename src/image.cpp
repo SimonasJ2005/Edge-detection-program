@@ -6,66 +6,8 @@
 #include "stb_image_write.h"
 
 #include <cmath>
-#include <fstream>
 #include <stdexcept>
 #include <cctype>
-
-#define STB_IMAGE_IMPLEMENTATION
-
-// Praleidžia tarpus ir komentarus (eilutes, prasidedančias '#') PGM antraštėje.
-static void skipCommentsAndWhiteSpaces(std::istream& in) {
-    while(true) {
-        int c = in.peek();
-
-        if(c == '#') {
-            std::string line;
-            std::getline(in, line);
-        }
-        else if(std::isspace(c)) {
-            in.get();
-        }
-        else {
-            break;
-        }
-    }
-}
-
-Image loadPGM(const std::string& path) {
-    std::ifstream in(path, std::ios::binary);
-    if(!in) throw std::runtime_error("Nepavyko atidaryti failo: " + path);
-
-    std::string magic;
-    in >> magic;
-    if(magic != "P5") throw std::runtime_error("Palaikomas tik PGM P5 formatas: " + path);
-
-    int w = 0, h = 0, maxVal = 0;
-    skipCommentsAndWhiteSpaces(in);
-    in >> w;
-    skipCommentsAndWhiteSpaces(in);
-    in >> h;
-    skipCommentsAndWhiteSpaces(in);
-    in >> maxVal;
-    in.get();
-
-    if(!in || w <= 0 || h <= 0 || maxVal != 255) throw std::runtime_error("Neteisinga PGM antraštė: " + path);
-
-    Image img(w, h);
-    in.read(reinterpret_cast<char*>(img.data.data()), static_cast<std::streamsize>(img.data.size()));
-    if(!in) throw std::runtime_error("Failo pabaiga per anksti: " + path);
-
-    return img;
-}
-
-void savePGM(const Image& image, const std::string& path) {
-    std::ofstream out(path, std::ios::binary);
-    if(!out) throw std::runtime_error("Nepavyko sukurti failo: " + path);
-
-    out << "P5\n" << image.width << " " << image.height << "\n255\n";
-    out.write(reinterpret_cast<const char*>(image.data.data()),
-              static_cast<std::streamsize>(image.data.size()));
-
-    if(!out) throw std::runtime_error("Nepavyko įrašyti failo: " + path);
-}
 
 Image loadImage(const std::string& path) {
     int w = 0, h = 0, channels = 0;
@@ -91,10 +33,6 @@ void saveImage(const Image& img, const std::string& path) {
         ok = stbi_write_png(path.c_str(), img.width, img.height, 1, img.data.data(), img.width);
     else if (extension == "jpg" || extension == "jpeg")
         ok = stbi_write_jpg(path.c_str(), img.width, img.height, 1, img.data.data(), 95);
-    else if (extension == "pgm") {
-        savePGM(img, path);
-        return;
-    }
     else throw std::runtime_error("Nepalaikomas išvesties formatas: " + path);
 
     if(!ok) throw std::runtime_error("Nepavyko išsaugoti vaizdo: " + path);
